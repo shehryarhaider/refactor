@@ -87,6 +87,7 @@ class BookingRepository extends BaseRepository
 
     /**
      * @param $user_id
+     * @param $request
      * @return array
      */
     public function getUsersJobsHistory($user_id, Request $request)
@@ -114,10 +115,11 @@ class BookingRepository extends BaseRepository
 
             $jobs = $jobs_ids;
             $noramlJobs = $jobs_ids;
-//            $jobs['data'] = $noramlJobs;
-//            $jobs['total'] = $totaljobs;
+            $jobs['data'] = $noramlJobs;
+            $jobs['total'] = $totaljobs;
             return ['emergencyJobs' => $emergencyJobs, 'noramlJobs' => $noramlJobs, 'jobs' => $jobs, 'cuser' => $cuser, 'usertype' => $usertype, 'numpages' => $numpages, 'pagenum' => $pagenum];
         }
+        return false;
     }
 
     /**
@@ -316,7 +318,8 @@ class BookingRepository extends BaseRepository
         $response['status'] = 'success';
         $data = $this->jobToData($job);
         Event::fire(new JobWasCreated($job, $data, '*'));
-        return $response;
+        //return $response;
+        return $response ?? 'failed';
 
     }
 
@@ -434,13 +437,14 @@ class BookingRepository extends BaseRepository
 
         $tr->completed_at = $completeddate;
         $tr->completed_by = $post_data['userid'];
-        $tr->save();
+        //$tr->save();
+        return ($tr->save()) ?? false;
     }
 
     /**
      * Function to get all Potential jobs of user with his ID
      * @param $user_id
-     * @return array
+     * @return mixed
      */
     public function getPotentialJobIdsWithUserId($user_id)
     {
@@ -469,7 +473,8 @@ class BookingRepository extends BaseRepository
             }
         }
         $jobs = TeHelper::convertJobIdsInObjs($job_ids);
-        return $jobs;
+
+        return ($jobs) ?? false;
     }
 
     /**
@@ -572,7 +577,7 @@ class BookingRepository extends BaseRepository
             Log::info('Send SMS to ' . $translator->email . ' (' . $translator->mobile . '), status: ' . print_r($status, true));
         }
 
-        return count($translators);
+        return count($translators) ?? false;
     }
 
     /**
@@ -729,7 +734,7 @@ class BookingRepository extends BaseRepository
 //            }
 //        }
 //        $jobs = TeHelper::convertJobIdsInObjs($job_ids);
-        return $users;
+        return ($users) ?? false;
 
     }
 
@@ -789,6 +794,7 @@ class BookingRepository extends BaseRepository
             if ($changeTranslator['translatorChanged']) $this->sendChangedTranslatorNotification($job, $current_translator, $changeTranslator['new_translator']);
             if ($langChanged) $this->sendChangedLangNotification($job, $old_lang);
         }
+        //return statement missing
     }
 
     /**
@@ -847,6 +853,7 @@ class BookingRepository extends BaseRepository
     {
 //        if (in_array($data['status'], ['pending', 'assigned']) && date('Y-m-d H:i:s') <= $job->due) {
         $old_status = $job->status;
+        //{{$old_status}} variable is not being  used in this function
         $job->status = $data['status'];
         $user = $job->user()->first();
         if (!empty($job->user_email)) {
@@ -871,16 +878,16 @@ class BookingRepository extends BaseRepository
 
             $this->sendNotificationTranslator($job, $job_data, '*');   // send Push all sutiable translators
 
-            return true;
+            return true; // check this return statement
         } elseif ($changedTranslator) {
             $job->save();
             $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
             $this->mailer->send($email, $name, $subject, 'emails.job-accepted', $dataEmail);
-            return true;
+            return true; // check this return statement
         }
 
 //        }
-        return false;
+        return false; // check this return statement
     }
 
     /**
@@ -898,7 +905,7 @@ class BookingRepository extends BaseRepository
         }
         $job->save();
         return true;
-//        }
+//        }  there are two consecutive return statement, use any one of them
         return false;
     }
 
@@ -953,7 +960,7 @@ class BookingRepository extends BaseRepository
         }
         $job->save();
         return true;
-//        }
+//        }  there are two consecutive return statement, use any one of them
         return false;
     }
 
@@ -986,6 +993,8 @@ class BookingRepository extends BaseRepository
             $job->save();
             $job_data = $this->jobToData($job);
 
+            // this {{$job_data}} variable is not being used in this function
+
             $subject = 'Bekräftelse - tolk har accepterat er bokning (bokning # ' . $job->id . ')';
             $this->mailer->send($email, $name, $subject, 'emails.job-accepted', $dataEmail);
 
@@ -996,17 +1005,17 @@ class BookingRepository extends BaseRepository
 
             $this->sendSessionStartRemindNotification($user, $job, $language, $job->due, $job->duration);
             $this->sendSessionStartRemindNotification($translator, $job, $language, $job->due, $job->duration);
-            return true;
+            return true; // use condition  here to return true
         } else {
             $subject = 'Avbokning av bokningsnr: #' . $job->id;
             $this->mailer->send($email, $name, $subject, 'emails.status-changed-from-pending-or-assigned-customer', $dataEmail);
-            $job->save();
-            return true;
+            return ($job->save()) ?? false;
+            //return true;
         }
 
 
 //        }
-        return false;
+        return false;  //check this return statement
     }
 
     /*
@@ -1036,6 +1045,8 @@ class BookingRepository extends BaseRepository
             $this->bookingRepository->sendPushNotificationToSpecificUsers($users_array, $job->id, $data, $msg_text, $this->bookingRepository->isNeedToDelayPush($user->id));
             $this->logger->addInfo('sendSessionStartRemindNotification ', ['job' => $job->id]);
         }
+
+        // add return statement in this function
     }
 
     /**
@@ -1049,8 +1060,9 @@ class BookingRepository extends BaseRepository
             $job->status = $data['status'];
             if ($data['admin_comments'] == '') return false;
             $job->admin_comments = $data['admin_comments'];
-            $job->save();
-            return true;
+            return ($job->save()) ?? false;
+
+            //return true;
         }
         return false;
     }
@@ -1097,6 +1109,7 @@ class BookingRepository extends BaseRepository
             $job->save();
             return true;
         }
+       // i have added this return statement check and verify it
         return false;
     }
 
@@ -1199,6 +1212,7 @@ class BookingRepository extends BaseRepository
 
         $this->mailer->send($email, $name, $subject, 'emails.job-changed-translator-new-translator', $data);
 
+        // use return statement in this function
     }
 
     /**
@@ -1230,6 +1244,7 @@ class BookingRepository extends BaseRepository
         ];
         $this->mailer->send($translator->email, $translator->name, $subject, 'emails.job-changed-date', $data);
 
+       // use return statement in this function
     }
 
     /**
@@ -1254,6 +1269,7 @@ class BookingRepository extends BaseRepository
         $this->mailer->send($email, $name, $subject, 'emails.job-changed-lang', $data);
         $translator = Job::getJobsAssignedTranslatorDetail($job);
         $this->mailer->send($translator->email, $translator->name, $subject, 'emails.job-changed-date', $data);
+        //use return statement in this function
     }
 
     /**
@@ -1274,6 +1290,8 @@ class BookingRepository extends BaseRepository
             $users_array = array($user);
             $this->sendPushNotificationToSpecificUsers($users_array, $job->id, $data, $msg_text, $this->isNeedToDelayPush($user->id));
         }
+
+        // use return statement is this function
     }
 
     /**
@@ -1370,7 +1388,7 @@ class BookingRepository extends BaseRepository
             $user_tags .= '{"key": "email", "relation": "=", "value": "' . strtolower($oneUser->email) . '"}';
         }
         $user_tags .= ']';
-        return $user_tags;
+        return $user_tags ?? false;
     }
 
     /**
@@ -1382,6 +1400,8 @@ class BookingRepository extends BaseRepository
 
         $adminemail = config('app.admin_email');
         $adminSenderEmail = config('app.admin_sender_email');
+
+        // {{$adminemail}} and {{$adminSenderEmail}} these variables are not being used in this function
 
         $cuser = $user;
         $job_id = $data['job_id'];
@@ -1430,6 +1450,10 @@ class BookingRepository extends BaseRepository
     {
         $adminemail = config('app.admin_email');
         $adminSenderEmail = config('app.admin_sender_email');
+
+       // {{$adminemail}} and {{$adminSenderEmail}} these variables are not being used in this function
+
+
         $job = Job::findOrFail($job_id);
         $response = array();
 
@@ -1589,7 +1613,8 @@ class BookingRepository extends BaseRepository
             }
         }
 //        $jobs = TeHelper::convertJobIdsInObjs($job_ids);
-        return $job_ids;
+       // return $job_ids;
+        return $job_ids ?? false;
     }
 
     public function endJob($post_data)
@@ -1667,6 +1692,7 @@ class BookingRepository extends BaseRepository
         $end = date_create($completeddate);
         $diff = date_diff($end, $start);
         $interval = $diff->h . ':' . $diff->i . ':' . $diff->s;
+        // this variable {{$interval}} is not being used in this function
         $job = $job_detail;
         $job->end_at = date('Y-m-d H:i:s');
         $job->status = 'not_carried_out_customer';
@@ -1872,7 +1898,8 @@ class BookingRepository extends BaseRepository
                 $allJobs = $allJobs->paginate(15);
 
         }
-        return $allJobs;
+        //return $allJobs;
+        return $allJobs ?? false;
     }
 
     public function alerts()
@@ -1909,6 +1936,7 @@ class BookingRepository extends BaseRepository
         $cuser = Auth::user();
         $consumer_type = TeHelper::getUsermeta($cuser->id, 'consumer_type');
 
+        // this variable {{$consumer_type}} is not being used in the function
 
         if ($cuser && $cuser->is('superadmin')) {
             $allJobs = DB::table('jobs')
@@ -1995,7 +2023,7 @@ class BookingRepository extends BaseRepository
 
         $cuser = Auth::user();
         $consumer_type = TeHelper::getUsermeta($cuser->id, 'consumer_type');
-
+// this {{$consumer_type}} variable is not being used in this function
 
         if ($cuser && ($cuser->is('superadmin') || $cuser->is('admin'))) {
             $allJobs = DB::table('jobs')
@@ -2153,6 +2181,9 @@ class BookingRepository extends BaseRepository
         //$result = DB::table('translator_job_rel')->insertGetId($data);
         Translator::where('job_id', $jobid)->where('cancel_at', NULL)->update(['cancel_at' => $data['cancel_at']]);
         $Translator = Translator::create($data);
+
+        //$Translator this variable is not being used in this function
+
         if (isset($affectedRows)) {
             $this->sendNotificationByAdminCancelJob($new_jobid);
             return ["Tolk cancelled!"];
