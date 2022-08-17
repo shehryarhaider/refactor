@@ -5,3 +5,6 @@
 # modify response of success to failed in storeJobEmail method in BookingRepository
 # we can further modify all the BookingRepository condition by using Laravel sync method but right now i dont have database so its hard to manage
 # there is alot of if conditions we can handle all of them using trait and helper methods 
+# Good paractices is that for using repository structure and using same method for create & update the record
+# further we can use sync method
+# we can also use custom validator class for validate our data of POST request
